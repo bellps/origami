@@ -1,110 +1,62 @@
+
 Origami
 =====
-[![Gem Version](https://badge.fury.io/rb/origami.svg)](http://rubygems.org/gems/origami)
 
 Overview
 --------
 
-Origami is a framework written in pure Ruby to manipulate PDF files.
+This is a fork of the [original origami project](https://github.com/gdelugre/origami). 
 
-It offers the possibility to parse the PDF contents, modify and save the PDF
-structure, as well as creating new documents.
+I have added a way to sign PDF files with an external provider, such as the Austrian "[Handy-Signatur](http://handy-signatur.at)" (Mobile Phone Signature)
 
-Origami supports some advanced features of the PDF specification:
-
-* Compression filters with predictor functions
-* Encryption using RC4 or AES, including the undocumented Revision 6 derivation algorithm
-* Digital signatures and Usage Rights
-* File attachments
-* AcroForm and XFA forms
-* Object streams
-
-Origami is able to parse PDF, FDF and PPKLite (Adobe certificate store) files.
+Currently only PDF PKCS#7 signatures are supported, however I plan to support PAdES (PDF Advanced Electronic Signatures) as well.
 
 Requirements
-------------
+-------
 
-As of version 2, the minimal version required to run Origami is Ruby 2.1.
+You can review requirements and other important information at the [original origami project](https://github.com/gdelugre/origami).
 
-Some optional features require additional gems:
+Quickstart
+-------
 
-* [therubyracer][the-ruby-racer] for JavaScript emulation of PDF scripts
+This fork adds two new methods for PDF manipulating.
 
-[the-ruby-racer]: https://rubygems.org/gems/therubyracer
+    base64_string = pdf.prepare_signature(
+          name: "John Doe",
+          location: "Somewhere",
+          contact: "john@doe.com",
+          reason: "PDF Signature Test",
+          method: Signature::PKCS7_DETACHED,
+          content_size: 4096)
 
-Quick start
------------
+`prepare_signature`  adds the signature object to the PDF document and prepares it for signing. You can specify some parameters which are shown when opening the PDF with a PDF reader (name, location, etc). This method returns the PDF as a Base64 encoded string, excluding the signature placeholder.
 
-First install Origami using the latest gem available:
+    insert_signature(signature_base64)
 
-    $ gem install origami
+This method inserts the signature back into the PDF (at the /Content object).
 
-Then import Origami with:
+Code example [here](examples/signature/external_signature.rb).
 
-```ruby
-require 'origami'
-include Origami
-```
+Flow
+-------
 
-To process a PDF document, you can use the ``PDF.read`` method:
+ 1. Read or create PDF document
+ 2. Prepare the signature
+ 3. Send Base64 content to external signature provider
+ 4. Insert the signature into the PDF
+ 5. Finish
 
-```ruby
-pdf = PDF.read "something.pdf"
+Known Bugs
+-------
 
-puts "This document has #{pdf.pages.size} page(s)"
-```
+When saving the PDF after preparing it and re-reading it from disk, the Signature Object can get scrambled up, which invalidates the ByteRange array and also the signature.
 
-The default behavior is to parse the entire contents of the document at once. This can be changed by passing the ``lazy`` flag to parse objects on demand.
+Helpful Literature
+-------
 
-```ruby
-pdf = PDF.read "something.pdf", lazy: true
+[Digital Signatures in a PDF](https://www.adobe.com/devnet-docs/acrobatetk/tools/DigSig/Acrobat_DigitalSignatures_in_PDF.pdf)
 
-pdf.each_page do |page|
-    page.each_font do |name, font|
-        # ... only parse the necessary bits
-    end
-end
-```
-
-You can also create documents directly by instanciating a new PDF object:
-
-```ruby
-pdf = PDF.new
-
-pdf.append_page
-pdf.pages.first.write "Hello", size: 30
-
-pdf.save("example.pdf")
-
-# Another way of doing it
-PDF.write("example.pdf") do |pdf|
-    pdf.append_page do |page|
-        page.write "Hello", size: 30
-    end
-end
-```
-
-Take a look at the [examples](examples) and [bin](bin) directories for some examples of advanced usage.
-
-Tools
------
-
-Origami comes with a set of tools to manipulate PDF documents from the command line.
-
-* [pdfcop](bin/pdfcop): Runs some heuristic checks to detect dangerous contents.
-* [pdfdecompress](bin/pdfdecompress): Strips compression filters out of a document.
-* [pdfdecrypt](bin/pdfdecrypt): Removes encrypted contents from a document.
-* [pdfencrypt](bin/pdfencrypt): Encrypts a PDF document.
-* [pdfexplode](bin/pdfexplode): Explodes a document into several documents, each of them having one deleted resource. Useful for reduction of crash cases after a fuzzing session.
-* [pdfextract](bin/pdfextract): Extracts binary resources of a document (images, scripts, fonts, etc.).
-* [pdfmetadata](bin/pdfmetadata): Displays the metadata contained in a document.
-* [pdf2ruby](bin/pdf2ruby): Converts a PDF into an Origami script rebuilding an equivalent document (experimental).
-* [pdfsh](bin/pdfsh): An IRB shell running inside the Origami namespace.
-
-**Note**: Since version 2.1, [pdfwalker][pdfwalker-gem] has been moved to a [separate repository][pdfwalker-repo].
-
-[pdfwalker-gem]: https://rubygems.org/gems/pdfwalker
-[pdfwalker-repo]: https://github.com/gdelugre/pdfwalker
+[Portable Document Format Reference Manual Version 1.3](https://www.pdfill.com/download/PDFSPEC13.pdf)
 
 License
 -------
