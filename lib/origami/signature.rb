@@ -20,7 +20,7 @@
 
 require 'openssl'
 require 'digest/sha1'
-require 'Base64'
+require 'base64'
 
 module Origami
 
