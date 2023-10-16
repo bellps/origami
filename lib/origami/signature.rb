@@ -111,7 +111,7 @@ module Origami
             # Sign everything except the Contents HexString
             signable_data = filedata[digsig.ByteRange[0],digsig.ByteRange[1]] + filedata[digsig.ByteRange[2],digsig.ByteRange[2]+digsig.ByteRange[3]]
 
-            return Base64.encode64 signable_data # Return Base64 encoded signable data
+            return OpenSSL::Digest::SHA256.base64digest signable_data # Return Base64 encoded signable data
         end
 
         #
